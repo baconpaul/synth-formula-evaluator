@@ -26,5 +26,12 @@ TEST_CASE( "Parse Simple Thigns", "[basics]" )
         auto r = p.parse( "" );
         REQUIRE( r.get() );
     }
+
+    SECTION( "Just a Coment" )
+    {
+        auto p = Parser();
+        auto r = p.parse( "# Hi There I'm a comment" );
+        REQUIRE( r.get() );
+    }
     
 }
