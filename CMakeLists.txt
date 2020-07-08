@@ -6,6 +6,7 @@ message( STATUS "Configuring synth-formula-evaluationr with compiler ${CMAKE_CXX
 add_library(synth-formula-evaluator
   SHARED
   src/Parser.cpp
+  src/Evaluator.cpp
   )
 
 target_compile_features( synth-formula-evaluator PRIVATE cxx_std_17 )
@@ -18,6 +19,7 @@ endif()
 add_executable(synth-formula-test
   test/main.cpp
   test/simple.cpp
+  test/eval.cpp
   )
 
 target_compile_features( synth-formula-test PRIVATE cxx_std_17 )

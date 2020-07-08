@@ -48,6 +48,8 @@ namespace sfe_combinators
     struct sum : list_must< product, sor< plus, minus > > {};
     
     struct rhs : sor<sum> {};
+
+    struct standalone_rhs : rhs {};
     
     struct let_literal : string< 'l', 'e', 't' > {};
     struct out_literal : string< 'o', 'u', 't' > {};
@@ -66,7 +68,7 @@ namespace sfe_combinators
     struct assignment_list : list_tail< assignment, one< ';' >, space > {};
 
     // struct anything : sor< assignment_list, comment > {};
-    struct anything : sor< assignment_list, rhs, comment > {};
+    struct anything : sor< assignment_list, standalone_rhs, comment > {};
     struct grammar : until< eof, anything > {};
 
     template< typename Rule >
@@ -85,12 +87,13 @@ namespace sfe_combinators
 
             in_parens, function_call,
 
-            rhs,
+            standalone_rhs,
 
             let_identifier, out_identifier,
-            lhs,
 
-            anything
+            assignment,
+            assignment_list
+            
             > >;
 
 
