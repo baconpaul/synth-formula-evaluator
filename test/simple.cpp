@@ -12,6 +12,20 @@
 
 using namespace SynthFormulaEvaluator;
 
+TEST_CASE( "Show some Parse Trees" "[basics]" )
+{
+    SECTION( "Parse Trees" )
+    {
+        auto tc = { "", "# Hi There", "42", "let(a) = -1932.2", "out(b) = 17.23" };
+        for( auto s : tc )
+        {
+            std::cout << "\nPARSING " << s << std::endl;
+            auto p = Parser();
+            p.parseTreeToStdout( s );
+        }
+
+    }
+}
 
 TEST_CASE( "Parse Simple Thigns", "[basics]" )
 {

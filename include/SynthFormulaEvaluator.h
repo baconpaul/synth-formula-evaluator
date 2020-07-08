@@ -55,6 +55,7 @@ struct Parser
 {
     bool checkGrammar() const;
     std::shared_ptr<ParseTree> parse( const std::string &formula ) const;
+    void parseTreeToStdout( const std::string &formula ) const;
 };
     
 }
