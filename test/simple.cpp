@@ -10,52 +10,32 @@
 #include "catch2.hpp"
 #include "SynthFormulaEvaluator.h"
 
+
 using namespace SynthFormulaEvaluator;
 
 TEST_CASE( "Show some Parse Trees" "[basics]" )
 {
     SECTION( "Parse Trees" )
     {
-        auto tc = { "", "# Hi There", "42", "let(a) = -1932.2", "out(b) = 17.23" };
+        auto tc = { "", "# Hi There", "42", "-1932.2", "let(a) = -1932.2", "out(b) = 17.23",
+                    "q + 2", "4 - (12.3 + 4) * 2",
+                    "sin( 2 * ( t + 4 ) )",
+                    //  "let(a) = 2 * 4;  let(b) = 7 * 3; out() = a + b"
+                    };
         for( auto s : tc )
         {
             std::cout << "\nPARSING " << s << std::endl;
             auto p = Parser();
-            p.parseTreeToStdout( s );
+            auto r = p.parse(s);
+            p.parseTreeToStdout( *r );
         }
 
     }
+
+
 }
 
 TEST_CASE( "Parse Simple Thigns", "[basics]" )
 {
-    SECTION( "Check Grammar" )
-    {
-        auto p = Parser();
-        REQUIRE( p.checkGrammar() );
-    }
-    SECTION( "Empty String" )
-    {
-        auto p = Parser();
-        auto r = p.parse( "" );
-        REQUIRE( r.get() );
-        std::cout << *r << std::endl;
-    }
-
-    SECTION( "Just a Coment" )
-    {
-        auto p = Parser();
-        auto r = p.parse( "# Hey there kids" );
-        REQUIRE( r.get() );
-        std::cout << *r << std::endl;
-    }
-
-    SECTION( "Just a Number" )
-    {
-        auto p = Parser();
-        auto r = p.parse( "-272.3" );
-        REQUIRE( r.get() );
-        std::cout << *r << std::endl;
-    }
 
 }
