@@ -63,10 +63,10 @@ namespace sfe_combinators
 
     struct lhs : sor< out_target, let_target > {};
     struct assignment : seq< lhs, opt<space>, one<'='>, opt<space>, rhs > {};
-    
-    struct expression : sor< assignment, rhs > {};
-    struct anything : sor< expression, comment > {};
-    
+    struct assignment_list : list_tail< assignment, one< ';' >, space > {};
+
+    // struct anything : sor< assignment_list, comment > {};
+    struct anything : sor< assignment_list, rhs, comment > {};
     struct grammar : until< eof, anything > {};
 
     template< typename Rule >
@@ -90,7 +90,7 @@ namespace sfe_combinators
             let_identifier, out_identifier,
             lhs,
 
-            expression
+            anything
             > >;
 
 
@@ -124,9 +124,16 @@ std::unique_ptr<ParseTree> Parser::parse(const std::string &formula) {
     
     pegtl::string_input<> in(formula, "Provided Formula");
     auto root = tao::pegtl::parse_tree::parse< sfe_combinators::grammar, sfe_combinators::selector >( in );
-    auto pt = std::make_unique<ParseTree>();
-    pt->root = fromTao( *root );
-    return pt;
+    if( root )
+    {
+        auto pt = std::make_unique<ParseTree>();
+        pt->root = fromTao( *root );
+        return pt;
+    }
+    else
+    {
+        return nullptr;
+    }
 }
 
 void Parser::parseTreeToStdout( const ParseTree &result ) const {
