@@ -25,13 +25,23 @@ TEST_CASE( "Parse Simple Thigns", "[basics]" )
         auto p = Parser();
         auto r = p.parse( "" );
         REQUIRE( r.get() );
+        std::cout << *r << std::endl;
     }
 
     SECTION( "Just a Coment" )
     {
         auto p = Parser();
-        auto r = p.parse( "# Hi There I'm a comment" );
+        auto r = p.parse( "# Hey there kids" );
         REQUIRE( r.get() );
+        std::cout << *r << std::endl;
     }
-    
+
+    SECTION( "Just a Number" )
+    {
+        auto p = Parser();
+        auto r = p.parse( "-272.3" );
+        REQUIRE( r.get() );
+        std::cout << *r << std::endl;
+    }
+
 }
