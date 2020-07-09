@@ -13,7 +13,7 @@
 
 using namespace SynthFormulaEvaluator;
 
-TEST_CASE( "Show some Parse Trees" "[basics]" )
+TEST_CASE( "Show some Parse Trees", "[basics]" )
 {
     SECTION( "Parse Trees" )
     {
@@ -21,7 +21,8 @@ TEST_CASE( "Show some Parse Trees" "[basics]" )
                     "q + 2", "4 - (12.3 + 4) * 2",
                     "sin( 2 * ( t + 4 ) )",
                     "let(a) = 2;  let(b) = 7 * 2;"
-                    "let(a) = 2;  let(b) = 7 * 2; out(a) = b + a"
+                    "let(a) = 2;  let(b) = 7 * 2; out(a) = b + a",
+                    "max(0.2, 0.3)"
         };
         //auto tc = { "let(a) = 1; let(b) = 2;" };
         for( auto s : tc )
@@ -38,7 +39,3 @@ TEST_CASE( "Show some Parse Trees" "[basics]" )
 
 }
 
-TEST_CASE( "Parse Simple Thigns", "[basics]" )
-{
-
-}

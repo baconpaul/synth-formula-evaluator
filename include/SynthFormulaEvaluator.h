@@ -32,7 +32,8 @@ struct ParseTree
 
         IN_PARENS,
 
-        
+        FUNCTION_CALL,
+        FUNCTION_NAME,
     };
 
     struct Node {
@@ -48,7 +49,9 @@ struct Parser
 {
     bool checkGrammar() const;
     std::unique_ptr<ParseTree> parse( const std::string &formula );
-    void parseTreeToStdout( const ParseTree &result ) const;
+    void parseTreeToStdout( const ParseTree &result ) const { parseTreeToStream( std::cout, result ); };
+    void parseTreeToStream( std::ostream &os, const ParseTree &result ) const;
+    void parseTreeToStreamAsDot( std::ostream &os, const ParseTree &result ) const;
 };
 
 struct Evaluator
@@ -63,6 +66,10 @@ struct Evaluator
     typedef float value_t;
     typedef std::unordered_map<symbol_t, value_t> environment_t;
     typedef std::unordered_map<symbol_t, value_t> result_t;
+
+    void evaluationGraphToStdout() const { evaluationGraphToStream( std::cout ); }
+    void evaluationGraphToStream( std::ostream &os ) const;
+    void evaluationGraphToStreamAsDot( std::ostream &os ) const;
 
     // TODO register functions
     

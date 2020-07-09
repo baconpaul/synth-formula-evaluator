@@ -51,6 +51,29 @@ TEST_CASE( "Evaluate Constants", "[eval]" )
         tp( "x", 1.0f, 1.0f );
         tp( "x+1", 1.f, 2.f );
     }
+
+    SECTION( "Functions" )
+    {
+        auto tp = []( const std::string &s, float x, float f ) {
+                      INFO( "Evaluating " << s << " " << x << " expexting " << f );
+                      auto parser = SynthFormulaEvaluator::Parser();
+                      auto tree   = parser.parse( s );
+
+                      // parser.parseTreeToStdout( *tree );
+                      
+                      auto evalu  = SynthFormulaEvaluator::Evaluator( *tree );
+                      auto env    = SynthFormulaEvaluator::Evaluator::environment_t( );
+                      env["x"] = x;
+                      auto res    = evalu.evaluate( env );
+
+                      REQUIRE( res["ROOT"] == Approx(f).margin(1e-5) );
+                  };
+        tp( "max( x, 0.5 )", 0.2, 0.5 );
+        tp( "sin(x)", 0, 0 );
+        tp( "sin(x)", 3.14159265/2.0, 1.0 );
+        tp( "sin(4 * x)", 3.14159265/2.0, 0.0 );
+
+    }
 }
 
 TEST_CASE( "Performance", "[eval]" )
@@ -65,6 +88,9 @@ TEST_CASE( "Performance", "[eval]" )
                       //parser.parseTreeToStdout( *tree );
                       
                       auto evalu  = SynthFormulaEvaluator::Evaluator( *tree );
+
+                      // evalu.evaluationGraphToStdout();
+                      
                       auto env    = SynthFormulaEvaluator::Evaluator::environment_t( );
                       float dontopt = 0;
                       auto start = std::chrono::high_resolution_clock::now();

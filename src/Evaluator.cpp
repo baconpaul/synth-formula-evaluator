@@ -1,5 +1,8 @@
 #include "SynthFormulaEvaluator.h"
 
+#include <cmath>
+#include <algorithm>
+
 namespace SynthFormulaEvaluator {
 
 struct Evaluator::Impl
@@ -12,6 +15,20 @@ struct Evaluator::Impl
         virtual ~Op() = default;
         virtual float eval( const Evaluator::environment_t &e, Evaluator::result_t &r ) = 0;
         std::vector<std::unique_ptr<Op>> children;
+
+        bool isConstant() { return false; }
+
+        virtual std::string toString() const {
+            auto res = std::string( "Op " ) + std::to_string(type);
+            return res;
+        }
+        
+        virtual bool optimizeChildren() {
+            auto haveAnother = false;
+            for( auto &n : children )
+                haveAnother |= n->optimizeChildren();
+            return haveAnother;
+        }
     };
 
     struct Error : public Op
@@ -57,6 +74,7 @@ struct Evaluator::Impl
         virtual float eval( const Evaluator::environment_t &e, Evaluator::result_t &r ) override {
             return val;
         }
+        bool isConstant() { return true; }
     };
 
     struct ApplyOp : public Op
@@ -105,7 +123,45 @@ struct Evaluator::Impl
             return e.at(name);
         }
     };
-    
+
+    // Functions with args
+    template< float f() >
+    struct Function0 : public Op
+    {
+        virtual float eval( const Evaluator::environment_t &e, Evaluator::result_t &r ) override {
+            return f();
+        }
+    };
+
+    template< float f(const float x) >
+    struct Function1 : public Op
+    {
+        virtual float eval( const Evaluator::environment_t &e, Evaluator::result_t &r ) override {
+            auto x = children[1]->eval(e, r);
+            return f(x);
+        }
+    };
+
+    template< float f(const float x, const float y) >
+    struct Function2 : public Op
+    {
+        virtual float eval( const Evaluator::environment_t &e, Evaluator::result_t &r ) override {
+            auto x = children[1]->eval(e, r);
+            auto y = children[2]->eval(e, r);
+            return f(x, y);
+        }
+    };
+
+    template< const float& f(const float &x, const float &y) >
+    struct Function2Ref : public Op
+    {
+        virtual float eval( const Evaluator::environment_t &e, Evaluator::result_t &r ) override {
+            auto x = children[1]->eval(e, r);
+            auto y = children[2]->eval(e, r);
+            return f(x, y);
+        }
+    };
+
     struct BinOp : public Op
     {
         virtual float eval( const Evaluator::environment_t &e, Evaluator::result_t &r ) override {
@@ -118,6 +174,12 @@ struct Evaluator::Impl
     
     Impl(const ParseTree &tree) {
         root = buildRecursively(*(tree.root));
+        auto oc = root->optimizeChildren();
+        // It may take multiple passes, bcause I'm sloppy
+        for( int i=0; i<10 && oc; ++i )
+        {
+            oc = root->optimizeChildren();
+        }
     };
 
     std::unique_ptr<Op> buildRecursively( const ParseTree::Node &n ) {
@@ -143,6 +205,18 @@ struct Evaluator::Impl
         case ParseTree::VARIABLE:
             op = std::make_unique<Variable>(n.contents);
             break;
+        case ParseTree::FUNCTION_CALL:
+        {
+            // TODO have this be dynamic later
+            auto fn = n.children[0]->contents;
+            // GROSS GROSS GROSS TEMPORARY
+            op = std::make_unique<Error>();
+            if( fn == "sin" )
+                op = std::make_unique<Function1<&std::sin>>();
+            if( fn == "max" )
+                op = std::make_unique<Function2Ref<&(std::max<float>)>>();
+            break;
+        }
         case ParseTree::PLUS:
         case ParseTree::MINUS:
         case ParseTree::MULTIPLY:
@@ -186,5 +260,17 @@ const Evaluator::result_t Evaluator::evaluate( const Evaluator::environment_t &e
     return impl->evaluate( e );
 }
 
+void Evaluator::evaluationGraphToStream( std::ostream &os ) const
+{
+    std::function<void(const Evaluator::Impl::Op *n, const std::string &pfx )> di =
+        [&di,&os](const Evaluator::Impl::Op *n, const std::string &pfx ) {
+            os << pfx << " " << n->toString() << "\n";
+            for( auto &c : n->children )
+            {
+                di( c.get(), pfx + "--|" );
+            }
+        };
+    di( impl->root.get(), "|" );
+}
     
 }

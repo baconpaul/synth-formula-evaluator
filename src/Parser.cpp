@@ -41,7 +41,7 @@ namespace sfe_combinators
     struct close_bracket : seq< star< space >, one< ')' > > {};
 
     struct in_parens : if_must< open_bracket, rhs, close_bracket > {};
-    struct function_call : seq< sfunctionname, open_bracket, rhs, close_bracket > {};
+    struct function_call : seq< sfunctionname, open_bracket, list_tail<rhs, one<','>, space >, close_bracket > {};
     
     struct value : sor< function_call, in_parens, snumber, svariable > {};
     struct product : list_must< value, sor< multiply, divide > > {};
@@ -126,6 +126,9 @@ std::unique_ptr<ParseTree::Node> fromTao( const tao::pegtl::parse_tree::node &i 
         idmap[std::type_index(typeid(sfe_combinators::divide))] = ParseTree::NodeTypes::DIVIDE;
 
         idmap[std::type_index(typeid(sfe_combinators::in_parens))] = ParseTree::NodeTypes::IN_PARENS;
+
+        idmap[std::type_index(typeid(sfe_combinators::function_call))] = ParseTree::NodeTypes::FUNCTION_CALL;
+        idmap[std::type_index(typeid(sfe_combinators::sfunctionname))] = ParseTree::NodeTypes::FUNCTION_NAME;
     }
     auto r = std::make_unique<ParseTree::Node>();
     r->typeName = i.name();
@@ -161,10 +164,10 @@ std::unique_ptr<ParseTree> Parser::parse(const std::string &formula) {
     }
 }
 
-void Parser::parseTreeToStdout( const ParseTree &result ) const {
+void Parser::parseTreeToStream( std::ostream &os, const ParseTree &result ) const {
     std::function<void(const ParseTree::Node &n, const std::string &pfx )> di =
-        [&di](const ParseTree::Node &n, const std::string &pfx ) {
-            std::cout << pfx << " " << n.typeName << " / " << n.type << " ct='" << n.contents << "'\n";
+        [&di,&os](const ParseTree::Node &n, const std::string &pfx ) {
+            os << pfx << " " << n.typeName << " / " << n.type << " ct='" << n.contents << "'\n";
             for( auto &c : n.children )
             {
                 di( *c, pfx + "--|" );
