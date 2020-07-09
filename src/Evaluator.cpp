@@ -59,34 +59,42 @@ struct Evaluator::Impl
         }
     };
 
-    struct ApplyBinOp : public Op
+    struct ApplyOp : public Op
     {
         virtual float eval( const Evaluator::environment_t &e, Evaluator::result_t &r ) override {
             float a = children[0]->eval(e,r);
-            float b = children[2]->eval(e,r);
-            BinOp *o = static_cast<BinOp*>(children[1].get());
-            switch(o->type)
+            for( int i=1; i<children.size(); i+= 2 )
             {
-            case ParseTree::PLUS:
-                return a+b;
-            case ParseTree::MINUS:
-                return a-b;
-            case ParseTree::DIVIDE:
-                return a/b;
-            case ParseTree::MULTIPLY:
-                return a*b;
-            default:
-                return 0;
+                float b = children[i+1]->eval(e,r);
+                BinOp *o = static_cast<BinOp*>(children[i].get());
+                switch(o->type)
+                {
+                case ParseTree::PLUS:
+                    a+= b;
+                    break;
+                case ParseTree::MINUS:
+                    a-=b;
+                    break;
+                case ParseTree::DIVIDE:
+                    a/=b;
+                    break;
+                case ParseTree::MULTIPLY:
+                    a*=b;
+                    break;
+                default:
+                    break;
+                }
             }
+            return a;
         }
 
     };
     
-    struct Sum : public ApplyBinOp
+    struct Sum : public ApplyOp
     {
     };
 
-    struct Product : public ApplyBinOp
+    struct Product : public ApplyOp
     {
     };
 
