@@ -15,6 +15,19 @@ struct ParseTree
 {
     enum NodeTypes {
         UNKNOWN = -1,
+
+        ROOT,
+
+        STANDALONE_RHS,
+        NUMBER,
+
+        SUM,
+        PRODUCT,
+        
+        PLUS,
+        MINUS,
+        MULTIPLY,
+        DIVIDE
         
     };
 
@@ -52,9 +65,14 @@ struct Evaluator
     const result_t evaluate( const environment_t & ) const;
 
     struct Impl;
-    // I really wanted to make this a unique pointer but can't because I get a template instantiation error when
-    // used from outside the library on macos. So make this no-copy instead
-    Impl *impl;
+    struct ImplDeleter {
+        /*
+        ** We need this so the destructor isn't automatically constructed by the unique ptr
+        ** since the header has an incomplete type and the default destructor will use sizeof
+        */
+        void operator()(Impl *i);
+    };
+    std::unique_ptr<Impl, ImplDeleter> impl;
 
 };
 }

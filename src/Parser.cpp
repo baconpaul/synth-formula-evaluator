@@ -105,13 +105,32 @@ bool Parser::checkGrammar() const
     return true;
 }
     
-
+    
 std::unique_ptr<ParseTree::Node> fromTao( const tao::pegtl::parse_tree::node &i  )
 {
+    static std::unordered_map<std::type_index, ParseTree::NodeTypes> idmap;
+    // WARNING: threads here I guess
+    if( idmap.size() == 0 )
+    {
+        idmap[std::type_index(typeid(void))] = ParseTree::NodeTypes::ROOT;
+        idmap[std::type_index(typeid(sfe_combinators::standalone_rhs))] = ParseTree::NodeTypes::STANDALONE_RHS;
+        idmap[std::type_index(typeid(sfe_combinators::snumber))] = ParseTree::NodeTypes::NUMBER;
+
+        idmap[std::type_index(typeid(sfe_combinators::sum))] = ParseTree::NodeTypes::SUM;
+        idmap[std::type_index(typeid(sfe_combinators::product))] = ParseTree::NodeTypes::PRODUCT;
+        
+        idmap[std::type_index(typeid(sfe_combinators::plus))] = ParseTree::NodeTypes::PLUS;
+        idmap[std::type_index(typeid(sfe_combinators::minus))] = ParseTree::NodeTypes::MINUS;
+        idmap[std::type_index(typeid(sfe_combinators::multiply))] = ParseTree::NodeTypes::MULTIPLY;
+        idmap[std::type_index(typeid(sfe_combinators::divide))] = ParseTree::NodeTypes::DIVIDE;
+    }
     auto r = std::make_unique<ParseTree::Node>();
     r->typeName = i.name();
     if( i.has_content() )
         r->contents = i.content();
+
+    if( idmap.find(i.id) != idmap.end() )
+        r->type = idmap[i.id];
     
     for( auto &c : i.children )
     {
