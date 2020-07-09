@@ -7,6 +7,8 @@ struct Evaluator::Impl
     // FIXME - can I do this without a virtual function?
     struct Op
     {
+        ParseTree::NodeTypes type;
+        Op( ) : type(ParseTree::UNKNOWN) { }
         virtual ~Op() = default;
         virtual float eval( const Evaluator::environment_t &e, Evaluator::result_t &r ) = 0;
         std::vector<std::unique_ptr<Op>> children;
@@ -14,8 +16,6 @@ struct Evaluator::Impl
 
     struct Error : public Op
     {
-        ParseTree::NodeTypes type;
-        Error( ParseTree::NodeTypes t ) : type(t) { }
         virtual float eval( const Evaluator::environment_t &e, Evaluator::result_t &r ) {
             std::cerr << "ERROR " << type << std::endl;
             return -123456;
@@ -89,11 +89,17 @@ struct Evaluator::Impl
     struct Product : public ApplyBinOp
     {
     };
+
+    struct Variable : public Op {
+        std::string name;
+        Variable( const std::string &nm ) : Op(), name(nm) {}
+        virtual float eval( const Evaluator::environment_t &e, Evaluator::result_t &r ) override {
+            return e.at(name);
+        }
+    };
     
     struct BinOp : public Op
     {
-        ParseTree::NodeTypes type;
-        BinOp( const ParseTree::NodeTypes t ) : type(t) {}
         virtual float eval( const Evaluator::environment_t &e, Evaluator::result_t &r ) override {
             std::cout << "ERROR - callin geval on binop" << std::endl;
             return 0;
@@ -114,6 +120,7 @@ struct Evaluator::Impl
             op = std::make_unique<Root>();
             break;
         case ParseTree::STANDALONE_RHS:
+        case ParseTree::IN_PARENS:
             op = std::make_unique<PassThru>();
             break;
         case ParseTree::NUMBER:
@@ -125,17 +132,21 @@ struct Evaluator::Impl
         case ParseTree::PRODUCT:
             op = std::make_unique<Product>();
             break;
+        case ParseTree::VARIABLE:
+            op = std::make_unique<Variable>(n.contents);
+            break;
         case ParseTree::PLUS:
         case ParseTree::MINUS:
         case ParseTree::MULTIPLY:
         case ParseTree::DIVIDE:
-            op = std::make_unique<BinOp>(n.type);
+            op = std::make_unique<BinOp>();
             break;
         case ParseTree::UNKNOWN:
         default:
-            op = std::make_unique<Error>(n.type);
+            op = std::make_unique<Error>();
             break;
         }
+        op->type = n.type;
         for( auto &c : n.children )
         {
             op->children.push_back( buildRecursively(*c) );

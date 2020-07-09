@@ -20,6 +20,7 @@ struct ParseTree
 
         STANDALONE_RHS,
         NUMBER,
+        VARIABLE,
 
         SUM,
         PRODUCT,
@@ -27,7 +28,10 @@ struct ParseTree
         PLUS,
         MINUS,
         MULTIPLY,
-        DIVIDE
+        DIVIDE,
+
+        IN_PARENS,
+
         
     };
 

@@ -115,6 +115,7 @@ std::unique_ptr<ParseTree::Node> fromTao( const tao::pegtl::parse_tree::node &i 
         idmap[std::type_index(typeid(void))] = ParseTree::NodeTypes::ROOT;
         idmap[std::type_index(typeid(sfe_combinators::standalone_rhs))] = ParseTree::NodeTypes::STANDALONE_RHS;
         idmap[std::type_index(typeid(sfe_combinators::snumber))] = ParseTree::NodeTypes::NUMBER;
+        idmap[std::type_index(typeid(sfe_combinators::svariable))] = ParseTree::NodeTypes::VARIABLE;
 
         idmap[std::type_index(typeid(sfe_combinators::sum))] = ParseTree::NodeTypes::SUM;
         idmap[std::type_index(typeid(sfe_combinators::product))] = ParseTree::NodeTypes::PRODUCT;
@@ -123,6 +124,8 @@ std::unique_ptr<ParseTree::Node> fromTao( const tao::pegtl::parse_tree::node &i 
         idmap[std::type_index(typeid(sfe_combinators::minus))] = ParseTree::NodeTypes::MINUS;
         idmap[std::type_index(typeid(sfe_combinators::multiply))] = ParseTree::NodeTypes::MULTIPLY;
         idmap[std::type_index(typeid(sfe_combinators::divide))] = ParseTree::NodeTypes::DIVIDE;
+
+        idmap[std::type_index(typeid(sfe_combinators::in_parens))] = ParseTree::NodeTypes::IN_PARENS;
     }
     auto r = std::make_unique<ParseTree::Node>();
     r->typeName = i.name();
