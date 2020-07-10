@@ -53,22 +53,25 @@ namespace sfe_combinators
     
     struct let_literal : string< 'l', 'e', 't' > {};
     struct out_literal : string< 'o', 'u', 't' > {};
+    struct state_literal : string< 's', 't', 'a', 't', 'e' > {};
 
     struct let_identifier : identifier {};
     struct out_identifier : identifier {};
+    struct state_identifier : identifier {};
 
     template< typename L, typename I >
     struct target_with_identifier : seq< L, opt<space>, one<'('>, opt<space>, I, opt<space>, one<')'> > {};
         
     struct let_target : target_with_identifier< let_literal, let_identifier > {};
     struct out_target : target_with_identifier< out_literal, out_identifier > {};
+    struct state_target : target_with_identifier< state_literal, state_identifier > {};
 
-    struct lhs : sor< out_target, let_target > {};
+    struct lhs : sor< out_target, let_target, state_target > {};
     struct assignment : seq< lhs, opt<space>, one<'='>, opt<space>, rhs > {};
     struct assignment_list : list_tail< assignment, one< ';' >, space > {};
 
     // struct anything : sor< assignment_list, comment > {};
-    struct anything : sor< assignment_list, standalone_rhs, comment > {};
+    struct anything : sor< assignment_list, pad<standalone_rhs,space>, comment > {};
     struct grammar : until< eof, anything > {};
 
     template< typename Rule >
@@ -129,6 +132,11 @@ std::unique_ptr<ParseTree::Node> fromTao( const tao::pegtl::parse_tree::node &i 
 
         idmap[std::type_index(typeid(sfe_combinators::function_call))] = ParseTree::NodeTypes::FUNCTION_CALL;
         idmap[std::type_index(typeid(sfe_combinators::sfunctionname))] = ParseTree::NodeTypes::FUNCTION_NAME;
+
+        idmap[std::type_index(typeid(sfe_combinators::assignment_list))] = ParseTree::NodeTypes::ASSIGNMENT_LIST;
+        idmap[std::type_index(typeid(sfe_combinators::assignment))] = ParseTree::NodeTypes::ASSIGNMENT;
+
+        idmap[std::type_index(typeid(sfe_combinators::let_identifier))] = ParseTree::NodeTypes::LET_IDENTIFIER;
     }
     auto r = std::make_unique<ParseTree::Node>();
     r->typeName = i.name();

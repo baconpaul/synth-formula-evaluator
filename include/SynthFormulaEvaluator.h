@@ -34,6 +34,13 @@ struct ParseTree
 
         FUNCTION_CALL,
         FUNCTION_NAME,
+
+        ASSIGNMENT,
+        ASSIGNMENT_LIST,
+
+        LET_IDENTIFIER,
+        OUT_IDENTIFIER,
+        STATE_IDENTIFIER
     };
 
     struct Node {
@@ -65,7 +72,7 @@ struct Evaluator
     typedef std::string symbol_t;
     typedef float value_t;
     typedef std::unordered_map<symbol_t, value_t> environment_t;
-    typedef std::unordered_map<symbol_t, value_t> result_t;
+    typedef std::unordered_map<symbol_t, value_t> state_t;
 
     void evaluationGraphToStdout() const { evaluationGraphToStream( std::cout ); }
     void evaluationGraphToStream( std::ostream &os ) const;
@@ -73,7 +80,7 @@ struct Evaluator
 
     // TODO register functions
     
-    const result_t evaluate( const environment_t & ) const;
+    float evaluate( const environment_t &, state_t & ) const;
 
     struct Impl;
     struct ImplDeleter {

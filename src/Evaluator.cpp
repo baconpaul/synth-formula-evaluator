@@ -13,7 +13,7 @@ struct Evaluator::Impl
         ParseTree::NodeTypes type;
         Op( ) : type(ParseTree::UNKNOWN) { }
         virtual ~Op() = default;
-        virtual float eval( const Evaluator::environment_t &e, Evaluator::result_t &r ) = 0;
+        virtual float eval( const Evaluator::environment_t &e, Evaluator::environment_t &l, Evaluator::state_t &r ) = 0;
         std::vector<std::unique_ptr<Op>> children;
 
         bool isConstant() { return false; }
@@ -33,19 +33,19 @@ struct Evaluator::Impl
 
     struct Error : public Op
     {
-        virtual float eval( const Evaluator::environment_t &e, Evaluator::result_t &r ) {
+        virtual float eval( const Evaluator::environment_t &e, Evaluator::environment_t &l, Evaluator::state_t &r ) {
             std::cerr << "ERROR " << type << std::endl;
             return -123456;
         }
     };
 
     struct PassThru : public Op {
-        virtual float eval( const Evaluator::environment_t &e, Evaluator::result_t &r ) override {
+        virtual float eval( const Evaluator::environment_t &e, Evaluator::environment_t &l, Evaluator::state_t &r ) override {
             // FIXME assert n.children == 1
             float res = 0;
             for( auto &n : children )
             {
-                res = n->eval( e, r );
+                res = n->eval( e, l, r );
             }
             return res;
         }
@@ -53,12 +53,12 @@ struct Evaluator::Impl
     
     struct Root : public Op
     {
-        virtual float eval( const Evaluator::environment_t &e, Evaluator::result_t &r ) override {
+        virtual float eval( const Evaluator::environment_t &e, Evaluator::environment_t &l, Evaluator::state_t &r ) override {
             // Execute all the children; return the value of the last one. Populate the result along the way
             float res;
             for( auto &n : children )
             {
-                res = n->eval( e, r );
+                res = n->eval( e, l, r );
             }
             return res;
         }
@@ -71,7 +71,7 @@ struct Evaluator::Impl
             // FIXME locales
             val = std::atof(s.c_str());
         }
-        virtual float eval( const Evaluator::environment_t &e, Evaluator::result_t &r ) override {
+        virtual float eval( const Evaluator::environment_t &e, Evaluator::environment_t &l, Evaluator::state_t &r ) override {
             return val;
         }
         bool isConstant() { return true; }
@@ -79,11 +79,11 @@ struct Evaluator::Impl
 
     struct ApplyOp : public Op
     {
-        virtual float eval( const Evaluator::environment_t &e, Evaluator::result_t &r ) override {
-            float a = children[0]->eval(e,r);
+        virtual float eval( const Evaluator::environment_t &e, Evaluator::environment_t &l, Evaluator::state_t &r ) override {
+            float a = children[0]->eval(e,l,r);
             for( int i=1; i<children.size(); i+= 2 )
             {
-                float b = children[i+1]->eval(e,r);
+                float b = children[i+1]->eval(e,l,r);
                 BinOp *o = static_cast<BinOp*>(children[i].get());
                 switch(o->type)
                 {
@@ -119,7 +119,9 @@ struct Evaluator::Impl
     struct Variable : public Op {
         std::string name;
         Variable( const std::string &nm ) : Op(), name(nm) {}
-        virtual float eval( const Evaluator::environment_t &e, Evaluator::result_t &r ) override {
+        virtual float eval( const Evaluator::environment_t &e, Evaluator::environment_t &l, Evaluator::state_t &r ) override {
+            if( l.find( name ) != l.end() )
+                return l.at(name);
             return e.at(name);
         }
     };
@@ -128,7 +130,7 @@ struct Evaluator::Impl
     template< float f() >
     struct Function0 : public Op
     {
-        virtual float eval( const Evaluator::environment_t &e, Evaluator::result_t &r ) override {
+        virtual float eval( const Evaluator::environment_t &e, Evaluator::environment_t &l, Evaluator::state_t &r ) override {
             return f();
         }
     };
@@ -136,8 +138,8 @@ struct Evaluator::Impl
     template< float f(const float x) >
     struct Function1 : public Op
     {
-        virtual float eval( const Evaluator::environment_t &e, Evaluator::result_t &r ) override {
-            auto x = children[1]->eval(e, r);
+        virtual float eval( const Evaluator::environment_t &e, Evaluator::environment_t &l, Evaluator::state_t &r ) override {
+            auto x = children[1]->eval(e, l, r);
             return f(x);
         }
     };
@@ -145,9 +147,9 @@ struct Evaluator::Impl
     template< float f(const float x, const float y) >
     struct Function2 : public Op
     {
-        virtual float eval( const Evaluator::environment_t &e, Evaluator::result_t &r ) override {
-            auto x = children[1]->eval(e, r);
-            auto y = children[2]->eval(e, r);
+        virtual float eval( const Evaluator::environment_t &e, Evaluator::environment_t &l, Evaluator::state_t &r ) override {
+            auto x = children[1]->eval(e, l, r);
+            auto y = children[2]->eval(e, l, r);
             return f(x, y);
         }
     };
@@ -155,21 +157,31 @@ struct Evaluator::Impl
     template< const float& f(const float &x, const float &y) >
     struct Function2Ref : public Op
     {
-        virtual float eval( const Evaluator::environment_t &e, Evaluator::result_t &r ) override {
-            auto x = children[1]->eval(e, r);
-            auto y = children[2]->eval(e, r);
+        virtual float eval( const Evaluator::environment_t &e, Evaluator::environment_t &l, Evaluator::state_t &r ) override {
+            auto x = children[1]->eval(e, l, r);
+            auto y = children[2]->eval(e, l, r);
             return f(x, y);
         }
     };
 
     struct BinOp : public Op
     {
-        virtual float eval( const Evaluator::environment_t &e, Evaluator::result_t &r ) override {
+        virtual float eval( const Evaluator::environment_t &e, Evaluator::environment_t &l, Evaluator::state_t &r ) override {
             std::cout << "ERROR - callin geval on binop" << std::endl;
             return 0;
         }
     };
 
+    struct Let : public Op {
+        std::string var;
+        Let( const std::string &v ) : Op(), var(v) {}
+        virtual float eval( const Evaluator::environment_t &e, Evaluator::environment_t &l, Evaluator::state_t &r ) override {
+            auto c = children[1]->eval(e,l,r);
+            l[var] = c;
+            return 0;
+        }
+    };
+    
     std::unique_ptr<Op> root;
     
     Impl(const ParseTree &tree) {
@@ -191,8 +203,21 @@ struct Evaluator::Impl
             break;
         case ParseTree::STANDALONE_RHS:
         case ParseTree::IN_PARENS:
+        case ParseTree::ASSIGNMENT_LIST:
             op = std::make_unique<PassThru>();
             break;
+        case ParseTree::ASSIGNMENT:
+        {
+            switch( n.children[0]->type ) {
+            case ParseTree::LET_IDENTIFIER:
+                op = std::make_unique<Let>(n.children[0]->contents);
+                break;
+            default:
+                op = std::make_unique<Error>();
+                break;
+            }
+            break;
+        }
         case ParseTree::NUMBER:
             op = std::make_unique<Number>(n.contents);
             break;
@@ -236,9 +261,9 @@ struct Evaluator::Impl
         return op;
     }
     
-    Evaluator::result_t evaluate( const Evaluator::environment_t &e ) const {
-        Evaluator::result_t r;
-        r["ROOT"] = root->eval( e, r );
+    float evaluate( const Evaluator::environment_t &e, Evaluator::state_t &s ) const {
+        auto localEnv = Evaluator::environment_t();
+        auto r = root->eval( e, localEnv, s );
         return r;
     }
         
@@ -256,8 +281,8 @@ Evaluator::Evaluator( const ParseTree &tree )
 
 Evaluator::~Evaluator() {}
     
-const Evaluator::result_t Evaluator::evaluate( const Evaluator::environment_t &e) const {
-    return impl->evaluate( e );
+float Evaluator::evaluate( const Evaluator::environment_t &e, Evaluator::state_t &s) const {
+    return impl->evaluate( e, s );
 }
 
 void Evaluator::evaluationGraphToStream( std::ostream &os ) const
