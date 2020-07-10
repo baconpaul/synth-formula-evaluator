@@ -116,6 +116,12 @@ struct Evaluator::Impl
     {
     };
 
+    struct UnaryMinus : public Op {
+        virtual float eval( const Evaluator::environment_t &e, Evaluator::environment_t &l, Evaluator::state_t &r ) override {
+            return -1.f * children[0]->eval(e,l,r);
+        }
+    };
+    
     struct Variable : public Op {
         std::string name;
         Variable( const std::string &nm ) : Op(), name(nm) {}
@@ -240,6 +246,9 @@ struct Evaluator::Impl
         case ParseTree::VARIABLE:
             op = std::make_unique<Variable>(n.contents);
             break;
+        case ParseTree::UNARY_MINUS:
+            op = std::make_unique<UnaryMinus>();
+            break;
         case ParseTree::FUNCTION_CALL:
         {
             // TODO have this be dynamic later
@@ -303,8 +312,12 @@ struct Evaluator::Impl
         rs1<&std::fabs>("fabs");
         rs1<&std::floor>("floor");
         rs1<&std::ceil>("ceil");
+        rs1<&std::ceil>("exp");
+        rs1<&std::ceil>("log");
+        rs1<&std::ceil>("log2");
 
         rs2r<&std::max<float>>("max");
+        rs2<&std::powf>("pow");
 
         std::cout << "Register StdLib results in " << std_lib.size() << std::endl;
     }

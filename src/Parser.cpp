@@ -46,8 +46,10 @@ namespace sfe_combinators
     struct value : sor< function_call, in_parens, snumber, svariable > {};
     struct product : list_must< value, sor< multiply, divide > > {};
     struct sum : list_must< product, sor< plus, minus > > {};
+
+    struct unary_minus : seq< pad< one<'-'>, space>, rhs> {};
     
-    struct rhs : sor<sum> {};
+    struct rhs : sor<sum, unary_minus> {};
 
     struct standalone_rhs : rhs {};
     
@@ -85,7 +87,8 @@ namespace sfe_combinators
             snumber,
             svariable,
             sfunctionname,
-
+            unary_minus,
+            
             plus, minus, multiply, divide,
 
             in_parens, function_call,
@@ -129,6 +132,7 @@ std::unique_ptr<ParseTree::Node> fromTao( const tao::pegtl::parse_tree::node &i 
         idmap[std::type_index(typeid(sfe_combinators::divide))] = ParseTree::NodeTypes::DIVIDE;
 
         idmap[std::type_index(typeid(sfe_combinators::in_parens))] = ParseTree::NodeTypes::IN_PARENS;
+        idmap[std::type_index(typeid(sfe_combinators::unary_minus))] = ParseTree::NodeTypes::UNARY_MINUS;
 
         idmap[std::type_index(typeid(sfe_combinators::function_call))] = ParseTree::NodeTypes::FUNCTION_CALL;
         idmap[std::type_index(typeid(sfe_combinators::sfunctionname))] = ParseTree::NodeTypes::FUNCTION_NAME;

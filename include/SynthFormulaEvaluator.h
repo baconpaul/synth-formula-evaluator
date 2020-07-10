@@ -30,6 +30,7 @@ struct ParseTree
         MULTIPLY,
         DIVIDE,
 
+        UNARY_MINUS,
         IN_PARENS,
 
         FUNCTION_CALL,
