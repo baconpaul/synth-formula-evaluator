@@ -144,6 +144,15 @@ struct Evaluator::Impl
         }
     };
 
+    template< const float& f(const float &x) >
+    struct Function1Ref : public Op
+    {
+        virtual float eval( const Evaluator::environment_t &e, Evaluator::environment_t &l, Evaluator::state_t &r ) override {
+            auto x = children[1]->eval(e, l, r);
+            return f(x);
+        }
+    };
+
     template< float f(const float x, const float y) >
     struct Function2 : public Op
     {
@@ -185,6 +194,7 @@ struct Evaluator::Impl
     std::unique_ptr<Op> root;
     
     Impl(const ParseTree &tree) {
+        registerStdLib();
         root = buildRecursively(*(tree.root));
         auto oc = root->optimizeChildren();
         // It may take multiple passes, bcause I'm sloppy
@@ -234,12 +244,17 @@ struct Evaluator::Impl
         {
             // TODO have this be dynamic later
             auto fn = n.children[0]->contents;
-            // GROSS GROSS GROSS TEMPORARY
             op = std::make_unique<Error>();
-            if( fn == "sin" )
-                op = std::make_unique<Function1<&std::sin>>();
-            if( fn == "max" )
-                op = std::make_unique<Function2Ref<&(std::max<float>)>>();
+            if( std_lib.find( fn ) != std_lib.end() )
+            {
+                std::cout << "Found stdlib for " << fn << std::endl;
+                op = std_lib[fn]();
+            }
+            else
+            {
+                std::cout << "No stdlib for " << fn << " " << std_lib.size() << std::endl;
+                
+            }
             break;
         }
         case ParseTree::PLUS:
@@ -259,6 +274,39 @@ struct Evaluator::Impl
             op->children.push_back( buildRecursively(*c) );
         }
         return op;
+    }
+
+    std::unordered_map<std::string, std::function<std::unique_ptr<Op>()>> std_lib;
+
+    template< float f(float) >
+    void rs1( const std::string &s ) {
+        std_lib[s] = [](){ return std::make_unique<Function1<f>>(); };
+    };
+    template< const float& f(const float&) >
+    void rs1r( const std::string &s ) {
+        std_lib[s] = [](){ return std::make_unique<Function1Ref<f>>(); };
+    };
+    template< float f(float,float) >
+    void rs2( const std::string &s ) {
+        std_lib[s] = [](){ return std::make_unique<Function2<f>>(); };
+    };
+    template< const float& f(const float&, const float&) >
+    void rs2r( const std::string &s ) {
+        std_lib[s] = [](){ return std::make_unique<Function2Ref<f>>(); };
+    };
+    
+    void registerStdLib() {
+        rs1<&std::sin>("sin");
+        rs1<&std::cos>("cos");
+        rs1<&std::tan>("tan");
+        rs1<&std::fabs>("abs");
+        rs1<&std::fabs>("fabs");
+        rs1<&std::floor>("floor");
+        rs1<&std::ceil>("ceil");
+
+        rs2r<&std::max<float>>("max");
+
+        std::cout << "Register StdLib results in " << std_lib.size() << std::endl;
     }
     
     float evaluate( const Evaluator::environment_t &e, Evaluator::state_t &s ) const {
@@ -297,5 +345,5 @@ void Evaluator::evaluationGraphToStream( std::ostream &os ) const
         };
     di( impl->root.get(), "|" );
 }
-    
+
 }

@@ -2,6 +2,7 @@
 #include "catch2.hpp"
 
 #include <chrono>
+#include <cmath>
 
 TEST_CASE( "Evaluate Constants", "[eval]" )
 {
@@ -84,7 +85,7 @@ TEST_CASE( "Performance", "[eval]" )
 {
     SECTION( "Math" )
     {
-         auto tp = []( const std::string &s, float f ) {
+        auto tp = []( const std::string &s, float f ) {
                       INFO( "Evaluating " << s << " expexting " << f );
                       auto parser = SynthFormulaEvaluator::Parser();
                       auto tree   = parser.parse( s );
