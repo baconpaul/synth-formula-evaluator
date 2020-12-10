@@ -143,7 +143,10 @@ std::unique_ptr<ParseTree::Node> fromTao( const tao::pegtl::parse_tree::node &i 
         idmap[std::type_index(typeid(sfe_combinators::let_identifier))] = ParseTree::NodeTypes::LET_IDENTIFIER;
     }
     auto r = std::make_unique<ParseTree::Node>();
-    r->typeName = i.name();
+    if( i.is_root() )
+        r->typeName = "<root>";
+    else
+        r->typeName = i.name();
     if( i.has_content() )
         r->contents = i.content();
 

@@ -67,7 +67,7 @@ struct Evaluator
     Evaluator( const ParseTree &tree );
     ~Evaluator();
 
-    Evaluator( const Evaluator &) = delete;
+    Evaluator( const Evaluator &) {};
     Evaluator& operator=( const Evaluator &) = delete;
     
     typedef std::string symbol_t;
