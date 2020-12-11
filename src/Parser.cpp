@@ -51,7 +51,7 @@ namespace sfe_combinators
     
     struct rhs : sor<sum, unary_minus> {};
 
-    struct standalone_rhs : rhs {};
+    struct standalone_rhs : seq< rhs, opt< one< ';' > > > {};
     
     struct let_literal : string< 'l', 'e', 't' > {};
     struct out_literal : string< 'o', 'u', 't' > {};
@@ -69,11 +69,10 @@ namespace sfe_combinators
     struct state_target : target_with_identifier< state_literal, state_identifier > {};
 
     struct lhs : sor< out_target, let_target, state_target > {};
-    struct assignment : seq< lhs, opt<space>, one<'='>, opt<space>, rhs > {};
-    struct assignment_list : list_tail< assignment, one< ';' >, space > {};
+    struct assignment : seq< lhs, opt<space>, one<'='>, opt<space>, rhs, one< ';' > > {};
 
     // struct anything : sor< assignment_list, comment > {};
-    struct anything : sor< assignment_list, pad<standalone_rhs,space>, comment > {};
+    struct anything : sor< pad< assignment, space >, pad<standalone_rhs,space>, pad<comment,space>, space > {};
     struct grammar : until< eof, anything > {};
 
     template< typename Rule >
@@ -97,8 +96,8 @@ namespace sfe_combinators
 
             let_identifier, out_identifier,
 
-            assignment,
-            assignment_list
+            assignment
+            //assignment_list
             
             > >;
 
@@ -137,7 +136,7 @@ std::unique_ptr<ParseTree::Node> fromTao( const tao::pegtl::parse_tree::node &i 
         idmap[std::type_index(typeid(sfe_combinators::function_call))] = ParseTree::NodeTypes::FUNCTION_CALL;
         idmap[std::type_index(typeid(sfe_combinators::sfunctionname))] = ParseTree::NodeTypes::FUNCTION_NAME;
 
-        idmap[std::type_index(typeid(sfe_combinators::assignment_list))] = ParseTree::NodeTypes::ASSIGNMENT_LIST;
+        //idmap[std::type_index(typeid(sfe_combinators::assignment_list))] = ParseTree::NodeTypes::ASSIGNMENT_LIST;
         idmap[std::type_index(typeid(sfe_combinators::assignment))] = ParseTree::NodeTypes::ASSIGNMENT;
 
         idmap[std::type_index(typeid(sfe_combinators::let_identifier))] = ParseTree::NodeTypes::LET_IDENTIFIER;
@@ -162,10 +161,11 @@ std::unique_ptr<ParseTree::Node> fromTao( const tao::pegtl::parse_tree::node &i 
     
 
 std::unique_ptr<ParseTree> Parser::parse(const std::string &formula) {
-    //pegtl::string_input<> tin(formula, "Provided Formula");
-    //pegtl::parse< sfe_combinators::grammar, pegtl::nothing, pegtl::tracer >( tin );
-    
+    // pegtl::string_input<> tin(formula, "Provided Formula");
+    // pegtl::parse< sfe_combinators::grammar, pegtl::nothing, pegtl::tracer >( tin );
+
     pegtl::string_input<> in(formula, "Provided Formula");
+
     auto root = tao::pegtl::parse_tree::parse< sfe_combinators::grammar, sfe_combinators::selector >( in );
     if( root )
     {

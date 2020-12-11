@@ -15,11 +15,12 @@ using namespace SynthFormulaEvaluator;
 
 TEST_CASE( "Show some Parse Trees", "[basics]" )
 {
-     auto tc = { "", "# Hi There", "42", "-1932.2", "let(a) = -1932.2", "out(b) = 17.23", "let(a) = 7;",
+     auto tc = {
+             "", "# Hi There", "42", "-1932.2", "42;", "let(a) = -1932.2;", "out(b) = 17.23;", "let(a) = 7;",
                 "q + 2", "4 - (12.3 + 4) * 2",
                 "sin( 2 * ( t + 4 ) )",
-                "let(a) = 2;  let(b) = 7 * 2;"
-                "let(a) = 2;  let(b) = 7 * 2; out(a) = b + a",
+                "let(a) = 2;  let(b) = 7 * 2;",
+                "let(a) = 2;  let(b) = 7 * 2; out(a) = b + a;",
                 "# Hi\n",
                 "13\n",
                  "# Hi\n13",
@@ -39,12 +40,6 @@ TEST_CASE( "Show some Parse Trees", "[basics]" )
                  "\n\n13\n14\n",
                  "\n13\n\n14\n",
                  "\n13\n14\n\n",
-                 R"TC(
-let(a) = 2;
-let(b) = a + 1;
-
-max(a,b)
-                )TC"
                 R"TC(
 # This is multiline with comments
 
@@ -52,7 +47,12 @@ let(a) = 2;
 let(b) = a + 1;
 
 max(a,b)
-                )TC"
+                )TC",
+
+                 R"TC(let(a) = 2; a+1;)TC",
+
+                 R"TC(let(a) = 2; let(b)=3; a+1)TC",
+                 R"TC(let(a) = 2; a+1)TC",
 
     };
     int idx = 0;
