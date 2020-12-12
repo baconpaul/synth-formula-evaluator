@@ -37,13 +37,16 @@ namespace sfe_combinators
     struct multiply : pad< one< '*' >, space > {};
     struct divide : pad< one< '/' >, space > {};
 
-    struct open_bracket : seq< one< '(' >, star< space > > {};
-    struct close_bracket : seq< star< space >, one< ')' > > {};
+    struct open_paren : seq< one< '(' >, star< space > > {};
+    struct close_paren : seq< star< space >, one< ')' > > {};
+    struct open_squarebracket : seq< one< '[' >, star< space > > {};
+    struct close_squarebracket : seq< one< ']' >, star< space > > {};
 
-    struct in_parens : if_must< open_bracket, rhs, close_bracket > {};
-    struct function_call : seq< sfunctionname, open_bracket, list_tail<rhs, one<','>, space >, close_bracket > {};
-    
-    struct value : sor< function_call, in_parens, snumber, svariable > {};
+    struct in_parens : if_must< open_paren, rhs, close_paren > {};
+    struct function_call : seq< sfunctionname, open_paren, list_tail<rhs, one<','>, space >, close_paren > {};
+    struct array_index : seq< svariable, open_squarebracket, rhs, close_squarebracket > {};
+
+    struct value : sor< function_call, in_parens, array_index, snumber, svariable > {};
     struct product : list_must< value, sor< multiply, divide > > {};
     struct sum : list_must< product, sor< plus, minus > > {};
 
@@ -60,6 +63,7 @@ namespace sfe_combinators
     struct let_identifier : identifier {};
     struct out_identifier : identifier {};
     struct state_identifier : identifier {};
+    struct naked_identifier : identifier {};
 
     template< typename L, typename I >
     struct target_with_identifier : seq< L, opt<space>, one<'('>, opt<space>, I, opt<space>, one<')'> > {};
@@ -68,7 +72,7 @@ namespace sfe_combinators
     struct out_target : target_with_identifier< out_literal, out_identifier > {};
     struct state_target : target_with_identifier< state_literal, state_identifier > {};
 
-    struct lhs : sor< out_target, let_target, state_target > {};
+    struct lhs : sor< out_target, let_target, state_target, naked_identifier > {};
     struct assignment : seq< lhs, opt<space>, one<'='>, opt<space>, rhs, one< ';' > > {};
 
     // struct anything : sor< assignment_list, comment > {};
@@ -90,11 +94,11 @@ namespace sfe_combinators
             
             plus, minus, multiply, divide,
 
-            in_parens, function_call,
+            in_parens, function_call, array_index,
 
             standalone_rhs,
 
-            let_identifier, out_identifier,
+            let_identifier, out_identifier, naked_identifier,
 
             assignment
             //assignment_list

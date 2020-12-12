@@ -53,7 +53,9 @@ max(a,b)
 
                  R"TC(let(a) = 2; let(b)=3; a+1)TC",
                  R"TC(let(a) = 2; a+1)TC",
-
+                 "b[0];",
+                 "let(a) = b[2];",
+                 "a = 1;"
     };
     int idx = 0;
     for( auto s : tc )
